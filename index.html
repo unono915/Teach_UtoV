@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Teach_UtoV — 수업용 유튜브 구간 재생기</title>
+  <meta name="description" content="수업에서 보여줄 유튜브 영상의 구간을 기록해 두고, 클릭 한 번으로 그 구간부터 재생합니다.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>▶</text></svg>">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body data-theme="dark">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">▶</span>
+      <span class="brand-name">Teach_UtoV</span>
+      <span class="brand-sub">수업용 유튜브 구간 재생기</span>
+    </div>
+    <div class="topbar-actions">
+      <button type="button" class="btn ghost" id="btn-export" title="수업 목록을 JSON 파일로 저장">내보내기</button>
+      <button type="button" class="btn ghost" id="btn-import" title="JSON 파일에서 수업 목록 불러오기">가져오기</button>
+      <button type="button" class="btn ghost" id="btn-help" title="단축키와 사용법">도움말</button>
+      <button type="button" class="btn ghost icon" id="btn-theme" title="밝게/어둡게 전환" aria-label="테마 전환">◐</button>
+      <input type="file" id="file-import" accept="application/json,.json" hidden>
+    </div>
+  </header>
+
+  <main class="layout">
+
+    <aside class="sidebar" aria-label="수업과 클립 목록">
+      <div class="panel lesson-panel">
+        <label class="field-label" for="lesson-select">수업</label>
+        <select id="lesson-select" class="select"></select>
+        <div class="row-actions">
+          <button type="button" class="btn small" id="btn-lesson-new">＋ 새 수업</button>
+          <button type="button" class="btn small ghost" id="btn-lesson-rename">이름 변경</button>
+          <button type="button" class="btn small danger-ghost" id="btn-lesson-delete">삭제</button>
+        </div>
+      </div>
+
+      <div class="panel clip-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">클립 <span class="count" id="clip-count">0</span></h2>
+          <button type="button" class="btn small primary" id="btn-clip-add">＋ 클립 추가</button>
+        </div>
+        <ol class="clip-list" id="clip-list"></ol>
+        <p class="empty-hint" id="clip-empty" hidden>
+          아직 클립이 없습니다.<br>
+          <strong>＋ 클립 추가</strong>를 눌러 유튜브 주소와 구간을 기록해 두세요.
+        </p>
+      </div>
+    </aside>
+
+    <section class="stage" aria-label="재생 화면">
+      <div class="player-shell">
+        <div class="player-box">
+          <div id="player"></div>
+          <div class="player-placeholder" id="player-placeholder">
+            <p>재생할 클립을 선택하세요.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="now-playing">
+        <div class="now-main">
+          <h1 class="now-title" id="now-title">클립을 선택해 주세요</h1>
+          <p class="now-meta">
+            <span id="now-range">—</span>
+            <a id="now-link" class="now-link" href="#" target="_blank" rel="noopener" hidden>유튜브에서 열기 ↗</a>
+          </p>
+        </div>
+        <p class="now-note" id="now-note" hidden></p>
+      </div>
+
+      <div class="progress" id="progress" role="slider" tabindex="0"
+           aria-label="구간 재생 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+        <div class="progress-track">
+          <div class="progress-fill" id="progress-fill"></div>
+        </div>
+        <div class="progress-times">
+          <span id="time-current">0:00</span>
+          <span id="time-total">0:00</span>
+        </div>
+      </div>
+
+      <div class="transport">
+        <button type="button" class="btn" id="btn-prev" title="이전 클립 (Shift+←)">⏮ 이전</button>
+        <button type="button" class="btn" id="btn-back5" title="5초 뒤로 (←)">◀◀ 5초</button>
+        <button type="button" class="btn primary wide" id="btn-play" title="재생 / 일시정지 (Space)">▶ 재생</button>
+        <button type="button" class="btn" id="btn-fwd5" title="5초 앞으로 (→)">5초 ▶▶</button>
+        <button type="button" class="btn" id="btn-restart" title="구간 처음으로 (R)">↺ 처음부터</button>
+        <button type="button" class="btn" id="btn-next" title="다음 클립 (Shift+→)">다음 ⏭</button>
+      </div>
+
+      <div class="options">
+        <label class="toggle">
+          <input type="checkbox" id="opt-loop">
+          <span>구간 반복</span>
+        </label>
+        <label class="toggle">
+          <input type="checkbox" id="opt-autonext">
+          <span>끝나면 다음 클립</span>
+        </label>
+        <label class="rate">
+          <span>속도</span>
+          <select id="opt-rate" class="select small">
+            <option value="0.5">0.5×</option>
+            <option value="0.75">0.75×</option>
+            <option value="1" selected>1×</option>
+            <option value="1.25">1.25×</option>
+            <option value="1.5">1.5×</option>
+            <option value="2">2×</option>
+          </select>
+        </label>
+      </div>
+
+      <form class="editor" id="editor" hidden>
+        <div class="editor-head">
+          <h2 id="editor-title">클립 추가</h2>
+          <button type="button" class="btn small ghost" id="btn-editor-close">닫기</button>
+        </div>
+
+        <label class="field">
+          <span class="field-label">유튜브 주소 또는 영상 ID</span>
+          <input type="text" id="f-url" class="input" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
+        </label>
+        <p class="field-hint" id="f-url-hint">주소를 붙여넣으면 아래 플레이어에 바로 뜹니다. 주소에 시간(t=)이 있으면 시작 시각으로 채워집니다.</p>
+
+        <label class="field">
+          <span class="field-label">클립 제목</span>
+          <input type="text" id="f-title" class="input" placeholder="예: 광합성 명반응 설명" autocomplete="off">
+        </label>
+
+        <div class="field-row">
+          <label class="field">
+            <span class="field-label">시작</span>
+            <div class="time-field">
+              <input type="text" id="f-start" class="input" placeholder="0:00" autocomplete="off">
+              <button type="button" class="btn small" id="btn-mark-start" title="플레이어의 현재 위치를 시작으로">현재 위치</button>
+            </div>
+          </label>
+          <label class="field">
+            <span class="field-label">끝 <span class="muted">(비우면 끝까지)</span></span>
+            <div class="time-field">
+              <input type="text" id="f-end" class="input" placeholder="2:30" autocomplete="off">
+              <button type="button" class="btn small" id="btn-mark-end" title="플레이어의 현재 위치를 끝으로">현재 위치</button>
+            </div>
+          </label>
+        </div>
+
+        <label class="field">
+          <span class="field-label">메모 <span class="muted">(수업 중 화면에 같이 보입니다)</span></span>
+          <textarea id="f-note" class="input" rows="2" placeholder="예: 시청 후 모둠별로 한 문장 요약"></textarea>
+        </label>
+
+        <div class="editor-actions">
+          <button type="button" class="btn" id="btn-preview">구간 미리보기</button>
+          <span class="spacer"></span>
+          <button type="button" class="btn ghost" id="btn-editor-cancel">취소</button>
+          <button type="submit" class="btn primary" id="btn-editor-save">저장</button>
+        </div>
+        <p class="editor-error" id="editor-error" hidden></p>
+      </form>
+    </section>
+  </main>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <dialog class="modal" id="help-dialog">
+    <h2>사용법과 단축키</h2>
+    <ol class="help-steps">
+      <li><strong>수업</strong>을 하나 만들고, <strong>클립 추가</strong>로 유튜브 주소를 붙여넣습니다.</li>
+      <li>플레이어를 돌려 보며 <strong>현재 위치</strong> 버튼으로 시작/끝 시각을 찍습니다.</li>
+      <li>수업 시간에는 왼쪽 목록에서 클립을 누르기만 하면 해당 구간이 재생됩니다.</li>
+      <li><strong>내보내기</strong>로 받은 JSON 파일을 다른 컴퓨터에서 <strong>가져오기</strong> 하면 그대로 옮겨집니다.</li>
+    </ol>
+    <table class="shortcuts">
+      <tbody>
+        <tr><th>Space</th><td>재생 / 일시정지</td></tr>
+        <tr><th>R</th><td>구간 처음으로</td></tr>
+        <tr><th>← / →</th><td>5초 뒤로 / 앞으로</td></tr>
+        <tr><th>Shift + ← / →</th><td>이전 / 다음 클립</td></tr>
+        <tr><th>1 ~ 9</th><td>목록의 해당 번호 클립 재생</td></tr>
+        <tr><th>L</th><td>구간 반복 켜기/끄기</td></tr>
+        <tr><th>N</th><td>새 클립 추가</td></tr>
+      </tbody>
+    </table>
+    <p class="help-legal">
+      이 프로그램은 유튜브 공식 IFrame Player API로 영상을 <strong>그 자리에서 재생</strong>만 합니다.
+      영상을 내려받거나 복제하지 않으므로 저작권·이용약관 문제에서 자유롭습니다.
+    </p>
+    <form method="dialog" class="modal-actions">
+      <button class="btn primary" value="close">닫기</button>
+    </form>
+  </dialog>
+
+  <script src="js/utils.js"></script>
+  <script src="js/store.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

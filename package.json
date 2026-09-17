@@ -1,0 +1,13 @@
+{
+  "name": "teach-utov",
+  "productName": "Teach_UtoV",
+  "version": "0.1.0",
+  "description": "수업에서 보여줄 유튜브 영상의 구간을 기록해 두고 클릭 한 번으로 재생하는 웹앱",
+  "license": "MIT",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node scripts/serve.mjs",
+    "dev": "node scripts/serve.mjs"
+  }
+}
