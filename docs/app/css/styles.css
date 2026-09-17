@@ -125,6 +125,12 @@ h1, h2, h3 { margin: 0; font-weight: 700; letter-spacing: -.01em; }
   padding: 14px;
 }
 
+.lesson-panel {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+}
+
 .clip-panel {
   flex: 1 1 auto;
   display: flex;
@@ -231,22 +237,24 @@ textarea.input { resize: vertical; line-height: 1.45; }
 .btn[disabled] { opacity: .45; cursor: not-allowed; }
 .btn[disabled]:hover { background: var(--panel-2); }
 
-/* ---------- 클립 목록 ---------- */
+/* ---------- 수업 / 클립 목록 ---------- */
 
-.clip-list {
+.lesson-list, .clip-list {
   list-style: none;
   margin: 0;
   padding: 0;
   overflow-y: auto;
-  flex: 1 1 auto;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.clip-item {
+.lesson-list { max-height: 210px; }
+.clip-list { flex: 1 1 auto; }
+
+.row-item {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 1fr auto;
   align-items: center;
   gap: 8px;
   padding: 8px 9px;
@@ -256,11 +264,19 @@ textarea.input { resize: vertical; line-height: 1.45; }
   cursor: pointer;
 }
 
-.clip-item:hover { border-color: var(--line); }
+.clip-item { grid-template-columns: 26px 1fr auto; }
 
-.clip-item.active {
+.row-item:hover { border-color: var(--line); }
+
+.row-item.active {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 14%, var(--panel-2));
+}
+
+.row-item.dragging {
+  opacity: .55;
+  border-style: dashed;
+  border-color: var(--accent);
 }
 
 .clip-index {
@@ -271,11 +287,11 @@ textarea.input { resize: vertical; line-height: 1.45; }
   text-align: center;
 }
 
-.clip-item.active .clip-index { color: var(--accent); }
+.row-item.active .clip-index { color: var(--accent); }
 
-.clip-body { min-width: 0; }
+.row-body { min-width: 0; }
 
-.clip-title {
+.row-title {
   font-size: 14.5px;
   font-weight: 600;
   overflow: hidden;
@@ -283,21 +299,24 @@ textarea.input { resize: vertical; line-height: 1.45; }
   white-space: nowrap;
 }
 
-.clip-range {
+.row-sub {
   font-size: 12.5px;
   color: var(--text-mute);
   font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.clip-tools {
+.row-tools {
   display: flex;
   gap: 2px;
   opacity: 0;
   transition: opacity .12s ease;
 }
 
-.clip-item:hover .clip-tools,
-.clip-item:focus-within .clip-tools { opacity: 1; }
+.row-item:hover .row-tools,
+.row-item:focus-within .row-tools { opacity: 1; }
 
 .tool-btn {
   background: transparent;
@@ -384,6 +403,14 @@ textarea.input { resize: vertical; line-height: 1.45; }
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+
+.now-lesson {
+  color: var(--text-mute);
+  border-right: 1px solid var(--line);
+  padding-right: 12px;
+}
+
+.now-lesson:empty { display: none; }
 
 .now-link { color: var(--accent); text-decoration: none; font-weight: 600; }
 .now-link:hover { text-decoration: underline; }
@@ -543,7 +570,17 @@ textarea.input { resize: vertical; line-height: 1.45; }
 
 .modal::backdrop { background: rgba(0, 0, 0, .55); }
 
+.modal.narrow { max-width: 380px; }
+
 .modal h2 { font-size: 18px; margin-bottom: 12px; }
+
+.modal-lead {
+  margin: 0 0 14px;
+  color: var(--text-dim);
+  font-size: 14.5px;
+}
+
+.modal .field { margin-bottom: 16px; }
 
 .help-steps {
   margin: 0 0 14px;
@@ -580,7 +617,58 @@ textarea.input { resize: vertical; line-height: 1.45; }
   line-height: 1.65;
 }
 
-.modal-actions { display: flex; justify-content: flex-end; }
+.modal-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+/* ---------- 발표 모드 ---------- */
+
+.present-exit { display: none; }
+
+body.presenting {
+  background: #000;
+  overflow: hidden;
+}
+
+body.presenting .topbar,
+body.presenting .sidebar,
+body.presenting .editor,
+body.presenting .options,
+body.presenting .now-link { display: none; }
+
+body.presenting .present-exit { display: inline-block; }
+
+body.presenting .layout {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 0;
+  gap: 0;
+  height: 100vh;
+}
+
+body.presenting .stage {
+  gap: 10px;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 24px 18px;
+}
+
+body.presenting .player-shell {
+  background: #000;
+  border: 0;
+  border-radius: 0;
+  display: flex;
+  justify-content: center;
+}
+
+body.presenting .player-box {
+  height: min(calc(100vh - 210px), 100vh);
+  width: auto;
+  max-width: 100%;
+}
+
+body.presenting .now-title { font-size: 30px; }
+body.presenting .now-meta { font-size: 17px; }
+body.presenting .now-note { font-size: 18px; }
+body.presenting .transport { justify-content: center; }
+body.presenting .progress-track { height: 10px; }
 
 /* ---------- 좁은 화면 ---------- */
 

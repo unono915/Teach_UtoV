@@ -17,8 +17,9 @@
       <span class="brand-sub">수업용 유튜브 구간 재생기</span>
     </div>
     <div class="topbar-actions">
-      <button type="button" class="btn ghost" id="btn-export" title="수업 목록을 JSON 파일로 저장">내보내기</button>
-      <button type="button" class="btn ghost" id="btn-import" title="JSON 파일에서 수업 목록 불러오기">가져오기</button>
+      <button type="button" class="btn primary" id="btn-present" title="발표 모드 (P)">발표 모드</button>
+      <button type="button" class="btn ghost" id="btn-export" title="전체 목록을 JSON 파일로 저장">내보내기</button>
+      <button type="button" class="btn ghost" id="btn-import" title="JSON 파일에서 목록 불러오기">가져오기</button>
       <button type="button" class="btn ghost" id="btn-help" title="단축키와 사용법">도움말</button>
       <button type="button" class="btn ghost icon" id="btn-theme" title="밝게/어둡게 전환" aria-label="테마 전환">◐</button>
       <input type="file" id="file-import" accept="application/json,.json" hidden>
@@ -27,15 +28,28 @@
 
   <main class="layout">
 
-    <aside class="sidebar" aria-label="수업과 클립 목록">
-      <div class="panel lesson-panel">
-        <label class="field-label" for="lesson-select">수업</label>
-        <select id="lesson-select" class="select"></select>
+    <aside class="sidebar" aria-label="묶음과 수업, 클립 목록">
+
+      <div class="panel collection-panel">
+        <label class="field-label" for="collection-select">묶음</label>
+        <select id="collection-select" class="select"></select>
         <div class="row-actions">
-          <button type="button" class="btn small" id="btn-lesson-new">＋ 새 수업</button>
-          <button type="button" class="btn small ghost" id="btn-lesson-rename">이름 변경</button>
-          <button type="button" class="btn small danger-ghost" id="btn-lesson-delete">삭제</button>
+          <button type="button" class="btn small" id="btn-collection-new">＋ 새 묶음</button>
+          <button type="button" class="btn small ghost" id="btn-collection-rename">이름 변경</button>
+          <button type="button" class="btn small danger-ghost" id="btn-collection-delete">삭제</button>
         </div>
+      </div>
+
+      <div class="panel lesson-panel">
+        <div class="panel-head">
+          <h2 class="panel-title">수업 <span class="count" id="lesson-count">0</span></h2>
+          <button type="button" class="btn small" id="btn-lesson-new">＋ 새 수업</button>
+        </div>
+        <ol class="lesson-list" id="lesson-list"></ol>
+        <p class="empty-hint" id="lesson-empty" hidden>
+          이 묶음에 수업이 없습니다.<br>
+          <strong>＋ 새 수업</strong>으로 차시를 만들어 주세요.
+        </p>
       </div>
 
       <div class="panel clip-panel">
@@ -65,6 +79,7 @@
         <div class="now-main">
           <h1 class="now-title" id="now-title">클립을 선택해 주세요</h1>
           <p class="now-meta">
+            <span id="now-lesson" class="now-lesson"></span>
             <span id="now-range">—</span>
             <a id="now-link" class="now-link" href="#" target="_blank" rel="noopener" hidden>유튜브에서 열기 ↗</a>
           </p>
@@ -90,6 +105,7 @@
         <button type="button" class="btn" id="btn-fwd5" title="5초 앞으로 (→)">5초 ▶▶</button>
         <button type="button" class="btn" id="btn-restart" title="구간 처음으로 (R)">↺ 처음부터</button>
         <button type="button" class="btn" id="btn-next" title="다음 클립 (Shift+→)">다음 ⏭</button>
+        <button type="button" class="btn ghost present-exit" id="btn-present-exit" title="발표 모드 끝내기 (Esc)">발표 모드 끝내기</button>
       </div>
 
       <div class="options">
@@ -124,7 +140,7 @@
           <span class="field-label">유튜브 주소 또는 영상 ID</span>
           <input type="text" id="f-url" class="input" placeholder="https://www.youtube.com/watch?v=..." autocomplete="off">
         </label>
-        <p class="field-hint" id="f-url-hint">주소를 붙여넣으면 아래 플레이어에 바로 뜹니다. 주소에 시간(t=)이 있으면 시작 시각으로 채워집니다.</p>
+        <p class="field-hint">주소를 붙여넣으면 위 플레이어에 바로 뜹니다. 주소에 시간(t=)이 있으면 시작 시각으로 채워집니다.</p>
 
         <label class="field">
           <span class="field-label">클립 제목</span>
@@ -169,9 +185,10 @@
   <dialog class="modal" id="help-dialog">
     <h2>사용법과 단축키</h2>
     <ol class="help-steps">
-      <li><strong>수업</strong>을 하나 만들고, <strong>클립 추가</strong>로 유튜브 주소를 붙여넣습니다.</li>
-      <li>플레이어를 돌려 보며 <strong>현재 위치</strong> 버튼으로 시작/끝 시각을 찍습니다.</li>
-      <li>수업 시간에는 왼쪽 목록에서 클립을 누르기만 하면 해당 구간이 재생됩니다.</li>
+      <li><strong>묶음</strong>으로 과목이나 학년을 나누고, 그 안에 차시별 <strong>수업</strong>을 만듭니다.</li>
+      <li><strong>클립 추가</strong>로 유튜브 주소를 붙여넣고, 플레이어를 돌려 보며 <strong>현재 위치</strong> 버튼으로 시작·끝을 찍습니다.</li>
+      <li>목록은 <strong>끌어서</strong> 순서를 바꿀 수 있습니다.</li>
+      <li>수업 시간에는 <strong>발표 모드</strong>로 전환하면 목록이 사라지고 영상만 크게 보입니다.</li>
       <li><strong>내보내기</strong>로 받은 JSON 파일을 다른 컴퓨터에서 <strong>가져오기</strong> 하면 그대로 옮겨집니다.</li>
     </ol>
     <table class="shortcuts">
@@ -182,7 +199,9 @@
         <tr><th>Shift + ← / →</th><td>이전 / 다음 클립</td></tr>
         <tr><th>1 ~ 9</th><td>목록의 해당 번호 클립 재생</td></tr>
         <tr><th>L</th><td>구간 반복 켜기/끄기</td></tr>
+        <tr><th>P</th><td>발표 모드 켜기/끄기</td></tr>
         <tr><th>N</th><td>새 클립 추가</td></tr>
+        <tr><th>Esc</th><td>발표 모드 끝내기</td></tr>
       </tbody>
     </table>
     <p class="help-legal">
@@ -192,6 +211,19 @@
     <form method="dialog" class="modal-actions">
       <button class="btn primary" value="close">닫기</button>
     </form>
+  </dialog>
+
+  <dialog class="modal narrow" id="move-dialog">
+    <h2>다른 묶음으로 옮기기</h2>
+    <p class="modal-lead" id="move-lesson-name"></p>
+    <label class="field">
+      <span class="field-label">옮길 묶음</span>
+      <select id="move-select" class="select"></select>
+    </label>
+    <div class="modal-actions">
+      <button type="button" class="btn ghost" id="btn-move-cancel">취소</button>
+      <button type="button" class="btn primary" id="btn-move-ok">옮기기</button>
+    </div>
   </dialog>
 
   <script src="js/utils.js"></script>

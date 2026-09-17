@@ -5,30 +5,33 @@
   var TU = global.TU || (global.TU = {});
   var u = TU.utils;
   var store = TU.store;
-  var $ = u.$;
 
   var player = null;
   var currentClipId = null;
   var editing = null;      // null | { mode: 'new' | 'edit', clipId: string|null }
+  var presenting = false;
+  var movingLessonId = null;
   var toastTimer = null;
 
   var dom = {};
 
+  var DOM_IDS = [
+    'collection-select', 'btn-collection-new', 'btn-collection-rename', 'btn-collection-delete',
+    'lesson-list', 'lesson-count', 'lesson-empty', 'btn-lesson-new',
+    'clip-list', 'clip-count', 'clip-empty', 'btn-clip-add',
+    'player-placeholder', 'now-title', 'now-lesson', 'now-range', 'now-note', 'now-link',
+    'progress', 'progress-fill', 'time-current', 'time-total',
+    'btn-prev', 'btn-next', 'btn-play', 'btn-restart', 'btn-back5', 'btn-fwd5',
+    'opt-loop', 'opt-autonext', 'opt-rate',
+    'editor', 'editor-title', 'editor-error', 'f-url', 'f-title', 'f-start', 'f-end', 'f-note',
+    'btn-mark-start', 'btn-mark-end', 'btn-preview', 'btn-editor-cancel', 'btn-editor-close',
+    'btn-export', 'btn-import', 'file-import', 'btn-theme', 'btn-help', 'help-dialog', 'toast',
+    'btn-present', 'btn-present-exit',
+    'move-dialog', 'move-select', 'move-lesson-name', 'btn-move-ok', 'btn-move-cancel'
+  ];
+
   function cacheDom() {
-    [
-      'lesson-select', 'btn-lesson-new', 'btn-lesson-rename', 'btn-lesson-delete',
-      'clip-list', 'clip-count', 'clip-empty', 'btn-clip-add',
-      'player-placeholder', 'now-title', 'now-range', 'now-note', 'now-link',
-      'progress', 'progress-fill', 'time-current', 'time-total',
-      'btn-prev', 'btn-next', 'btn-play', 'btn-restart', 'btn-back5', 'btn-fwd5',
-      'opt-loop', 'opt-autonext', 'opt-rate',
-      'editor', 'editor-title', 'editor-error', 'f-url', 'f-title', 'f-start', 'f-end', 'f-note',
-      'btn-mark-start', 'btn-mark-end', 'btn-preview', 'btn-editor-save',
-      'btn-editor-cancel', 'btn-editor-close',
-      'btn-export', 'btn-import', 'file-import', 'btn-theme', 'btn-help', 'help-dialog', 'toast'
-    ].forEach(function (id) {
-      dom[id] = document.getElementById(id);
-    });
+    DOM_IDS.forEach(function (id) { dom[id] = document.getElementById(id); });
   }
 
   /* ---------- 알림 ---------- */
@@ -38,6 +41,56 @@
     dom.toast.hidden = false;
     global.clearTimeout(toastTimer);
     toastTimer = global.setTimeout(function () { dom.toast.hidden = true; }, 2400);
+  }
+
+  /* ---------- 끌어서 순서 바꾸기 ---------- */
+
+  /**
+   * li[draggable] 로 이루어진 목록을 끌어서 정렬할 수 있게 한다.
+   * 놓는 순간 onDrop(id, 새 자리) 를 부른다.
+   */
+  function enableDragSort(listEl, onDrop) {
+    var dragging = null;
+
+    listEl.addEventListener('dragstart', function (event) {
+      var item = event.target.closest('[draggable="true"]');
+      if (!item) return;
+      dragging = item;
+      item.classList.add('dragging');
+      event.dataTransfer.effectAllowed = 'move';
+      // 파이어폭스는 데이터가 있어야 끌기가 시작된다.
+      event.dataTransfer.setData('text/plain', item.getAttribute('data-id'));
+    });
+
+    listEl.addEventListener('dragover', function (event) {
+      if (!dragging) return;
+      event.preventDefault();
+      event.dataTransfer.dropEffect = 'move';
+
+      var siblings = Array.prototype.slice.call(listEl.children)
+        .filter(function (node) { return node !== dragging; });
+
+      var after = null;
+      for (var i = 0; i < siblings.length; i++) {
+        var box = siblings[i].getBoundingClientRect();
+        if (event.clientY < box.top + box.height / 2) {
+          after = siblings[i];
+          break;
+        }
+      }
+      listEl.insertBefore(dragging, after);
+    });
+
+    listEl.addEventListener('drop', function (event) { event.preventDefault(); });
+
+    listEl.addEventListener('dragend', function () {
+      if (!dragging) return;
+      dragging.classList.remove('dragging');
+      var id = dragging.getAttribute('data-id');
+      var index = Array.prototype.indexOf.call(listEl.children, dragging);
+      dragging = null;
+      onDrop(id, index);
+    });
   }
 
   /* ---------- 그리기 ---------- */
@@ -52,29 +105,72 @@
     return start + ' ~ ' + u.formatTime(clip.end) + ' · ' + u.formatDuration(clip.start, clip.end);
   }
 
-  function renderLessons() {
+  function toolButton(act, label, title) {
+    return u.el('button', {
+      type: 'button', class: 'tool-btn', 'data-act': act, title: title, text: label
+    });
+  }
+
+  function renderCollections() {
     var state = store.getState();
-    var select = dom['lesson-select'];
+    var select = dom['collection-select'];
     select.innerHTML = '';
 
-    if (!state.lessons.length) {
-      select.appendChild(u.el('option', { value: '', text: '수업이 없습니다' }));
-      select.disabled = true;
-    } else {
-      select.disabled = false;
-      state.lessons.forEach(function (lesson) {
-        select.appendChild(u.el('option', {
-          value: lesson.id,
-          text: lesson.title + ' (' + lesson.clips.length + ')'
-        }));
-      });
-      select.value = state.settings.currentLessonId || '';
-    }
+    select.appendChild(u.el('option', {
+      value: '',
+      text: '전체 (' + state.lessons.length + '개 수업)'
+    }));
 
-    var hasLesson = !!store.getCurrentLesson();
-    dom['btn-lesson-rename'].disabled = !hasLesson;
-    dom['btn-lesson-delete'].disabled = !hasLesson;
-    dom['btn-clip-add'].disabled = !hasLesson;
+    state.collections.forEach(function (collection) {
+      var count = store.getLessonsOf(collection.id).length;
+      select.appendChild(u.el('option', {
+        value: collection.id,
+        text: collection.title + ' (' + count + ')'
+      }));
+    });
+
+    select.value = state.settings.currentCollectionId || '';
+
+    var chosen = !!store.getCurrentCollection();
+    dom['btn-collection-rename'].disabled = !chosen;
+    dom['btn-collection-delete'].disabled = !chosen;
+  }
+
+  function renderLessons() {
+    var lessons = store.getVisibleLessons();
+    var currentId = store.getState().settings.currentLessonId;
+    var list = dom['lesson-list'];
+    list.innerHTML = '';
+
+    dom['lesson-count'].textContent = String(lessons.length);
+    dom['lesson-empty'].hidden = lessons.length > 0;
+
+    lessons.forEach(function (lesson) {
+      var isCurrent = lesson.id === currentId;
+      var collection = lesson.collectionId ? store.getCollection(lesson.collectionId) : null;
+      list.appendChild(u.el('li', {
+        class: 'row-item lesson-item' + (isCurrent ? ' active' : ''),
+        'data-id': lesson.id,
+        draggable: 'true',
+        tabindex: '0',
+        role: 'button',
+        title: '끌어서 순서를 바꿀 수 있습니다'
+      }, [
+        u.el('div', { class: 'row-body' }, [
+          u.el('div', { class: 'row-title', text: lesson.title }),
+          u.el('div', { class: 'row-sub', text: '클립 ' + lesson.clips.length + '개' +
+            (collection && !store.getCurrentCollection() ? ' · ' + collection.title : '') })
+        ]),
+        u.el('div', { class: 'row-tools' }, [
+          toolButton('rename', '✎', '이름 변경'),
+          toolButton('move', '⇄', '다른 묶음으로'),
+          toolButton('copy', '⧉', '복제'),
+          toolButton('del', '✕', '삭제')
+        ])
+      ]));
+    });
+
+    dom['btn-clip-add'].disabled = !store.getCurrentLesson();
   }
 
   function renderClips() {
@@ -84,30 +180,28 @@
 
     var clips = lesson ? lesson.clips : [];
     dom['clip-count'].textContent = String(clips.length);
-    dom['clip-empty'].hidden = clips.length > 0;
+    dom['clip-empty'].hidden = clips.length > 0 || !lesson;
 
     clips.forEach(function (clip, index) {
-      var item = u.el('li', {
-        class: 'clip-item' + (clip.id === currentClipId ? ' active' : ''),
+      list.appendChild(u.el('li', {
+        class: 'row-item clip-item' + (clip.id === currentClipId ? ' active' : ''),
         'data-id': clip.id,
+        draggable: 'true',
         tabindex: '0',
         role: 'button',
         title: clip.note || clipLabel(clip, index)
       }, [
         u.el('span', { class: 'clip-index', text: String(index + 1) }),
-        u.el('div', { class: 'clip-body' }, [
-          u.el('div', { class: 'clip-title', text: clipLabel(clip, index) }),
-          u.el('div', { class: 'clip-range', text: rangeText(clip) })
+        u.el('div', { class: 'row-body' }, [
+          u.el('div', { class: 'row-title', text: clipLabel(clip, index) }),
+          u.el('div', { class: 'row-sub', text: rangeText(clip) })
         ]),
-        u.el('div', { class: 'clip-tools' }, [
-          u.el('button', { type: 'button', class: 'tool-btn', 'data-act': 'up', title: '위로', text: '↑' }),
-          u.el('button', { type: 'button', class: 'tool-btn', 'data-act': 'down', title: '아래로', text: '↓' }),
-          u.el('button', { type: 'button', class: 'tool-btn', 'data-act': 'edit', title: '편집', text: '✎' }),
-          u.el('button', { type: 'button', class: 'tool-btn', 'data-act': 'copy', title: '복제', text: '⧉' }),
-          u.el('button', { type: 'button', class: 'tool-btn', 'data-act': 'del', title: '삭제', text: '✕' })
+        u.el('div', { class: 'row-tools' }, [
+          toolButton('edit', '✎', '편집'),
+          toolButton('copy', '⧉', '복제'),
+          toolButton('del', '✕', '삭제')
         ])
-      ]);
-      list.appendChild(item);
+      ]));
     });
   }
 
@@ -119,6 +213,7 @@
       dom['now-title'].textContent = lesson && lesson.clips.length
         ? '클립을 선택해 주세요'
         : '수업과 클립을 먼저 만들어 주세요';
+      dom['now-lesson'].textContent = lesson ? lesson.title : '';
       dom['now-range'].textContent = '—';
       dom['now-note'].hidden = true;
       dom['now-link'].hidden = true;
@@ -130,7 +225,9 @@
     }
 
     var index = lesson.clips.indexOf(clip);
+    var collection = lesson.collectionId ? store.getCollection(lesson.collectionId) : null;
     dom['now-title'].textContent = clipLabel(clip, index);
+    dom['now-lesson'].textContent = (collection ? collection.title + ' · ' : '') + lesson.title;
     dom['now-range'].textContent = rangeText(clip);
     dom['now-note'].textContent = clip.note;
     dom['now-note'].hidden = !clip.note;
@@ -153,6 +250,7 @@
   }
 
   function render() {
+    renderCollections();
     renderLessons();
     renderClips();
     renderNowPlaying();
@@ -185,18 +283,15 @@
   }
 
   function onSegmentEnd() {
-    if (store.getState().settings.autoNext) {
-      var next = clipOffset(1);
-      if (next) playClip(next.id, true);
-      else toast('마지막 클립입니다.');
-    }
+    if (!store.getState().settings.autoNext) return;
+    var next = clipOffset(1);
+    if (next) playClip(next.id, true);
+    else toast('마지막 클립입니다.');
   }
 
   function onTick(time, duration, segment) {
     var start = segment.start || 0;
-    var end = segment.end !== null && segment.end !== undefined
-      ? segment.end
-      : (duration || 0);
+    var end = segment.end !== null && segment.end !== undefined ? segment.end : (duration || 0);
     var span = Math.max(0.001, end - start);
     var elapsed = u.clamp(time - start, 0, span);
 
@@ -209,6 +304,25 @@
   function onStateChange(stateCode) {
     var playing = stateCode === global.YT.PlayerState.PLAYING;
     dom['btn-play'].textContent = playing ? '❚❚ 일시정지' : '▶ 재생';
+  }
+
+  /* ---------- 발표 모드 ---------- */
+
+  function setPresenting(value) {
+    presenting = !!value;
+    document.body.classList.toggle('presenting', presenting);
+    dom['btn-present'].textContent = presenting ? '발표 모드 끄기' : '발표 모드';
+
+    if (presenting) {
+      closeEditor();
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(function () {
+          // 전체 화면을 막는 환경에서도 발표 배치는 그대로 쓴다.
+        });
+      }
+    } else if (document.fullscreenElement && document.exitFullscreen) {
+      document.exitFullscreen().catch(function () {});
+    }
   }
 
   /* ---------- 편집 ---------- */
@@ -224,6 +338,8 @@
       toast('먼저 수업을 만들어 주세요.');
       return;
     }
+    if (presenting) setPresenting(false);
+
     editing = { mode: mode, clipId: clip ? clip.id : null };
     dom['editor-title'].textContent = mode === 'new' ? '클립 추가' : '클립 편집';
     dom['f-url'].value = clip ? u.watchUrl(clip.videoId) : '';
@@ -340,19 +456,92 @@
     showEditorError('');
   }
 
+  /* ---------- 묶음 ---------- */
+
+  function newCollection() {
+    var title = global.prompt(
+      '새 묶음 이름을 적어 주세요. (예: 2학년 통합과학, 1학기)',
+      '묶음 ' + (store.getCollections().length + 1)
+    );
+    if (title === null) return;
+    var collection = store.addCollection(title.trim() || '새 묶음');
+    render();
+    toast('"' + collection.title + '" 묶음을 만들었습니다.');
+  }
+
+  function renameCollection() {
+    var collection = store.getCurrentCollection();
+    if (!collection) return;
+    var title = global.prompt('묶음 이름을 바꿉니다.', collection.title);
+    if (title === null) return;
+    store.updateCollection(collection.id, { title: title.trim() || collection.title });
+    render();
+  }
+
+  function deleteCollection() {
+    var collection = store.getCurrentCollection();
+    if (!collection) return;
+    var lessons = store.getLessonsOf(collection.id);
+
+    if (!lessons.length) {
+      if (!global.confirm('"' + collection.title + '" 묶음을 삭제할까요?')) return;
+      store.removeCollection(collection.id, false);
+    } else {
+      var keep = global.confirm(
+        '"' + collection.title + '" 묶음에 수업 ' + lessons.length + '개가 들어 있습니다.\n\n' +
+        '확인 — 묶음만 지우고 수업은 "묶음 없음"으로 남깁니다.\n' +
+        '취소 — 아무것도 지우지 않습니다.'
+      );
+      if (!keep) return;
+      store.removeCollection(collection.id, false);
+    }
+    render();
+    toast('묶음을 삭제했습니다.');
+  }
+
+  function openMoveDialog(lessonId) {
+    var lesson = store.getLesson(lessonId);
+    if (!lesson) return;
+    movingLessonId = lessonId;
+    dom['move-lesson-name'].textContent = '"' + lesson.title + '" 을(를) 어디로 옮길까요?';
+
+    var select = dom['move-select'];
+    select.innerHTML = '';
+    select.appendChild(u.el('option', { value: '', text: '묶음 없음' }));
+    store.getCollections().forEach(function (collection) {
+      select.appendChild(u.el('option', { value: collection.id, text: collection.title }));
+    });
+    select.value = lesson.collectionId || '';
+    dom['move-dialog'].showModal();
+  }
+
+  function confirmMove() {
+    if (!movingLessonId) return;
+    store.updateLesson(movingLessonId, { collectionId: dom['move-select'].value || null });
+    movingLessonId = null;
+    dom['move-dialog'].close();
+    render();
+    toast('수업을 옮겼습니다.');
+  }
+
   /* ---------- 수업 ---------- */
 
   function newLesson() {
-    var title = global.prompt('새 수업 이름을 적어 주세요.', '수업 ' + (store.getLessons().length + 1));
+    var collection = store.getCurrentCollection();
+    var label = collection ? collection.title + ' · ' : '';
+    var title = global.prompt(
+      '새 수업 이름을 적어 주세요.' + (collection ? '\n(' + collection.title + ' 묶음에 들어갑니다)' : ''),
+      '수업 ' + (store.getVisibleLessons().length + 1)
+    );
     if (title === null) return;
     var lesson = store.addLesson(title.trim() || '새 수업');
     currentClipId = null;
     render();
-    toast('"' + lesson.title + '" 수업을 만들었습니다.');
+    toast('"' + label + lesson.title + '" 수업을 만들었습니다.');
   }
 
-  function renameLesson() {
-    var lesson = store.getCurrentLesson();
+  function renameLesson(lessonId) {
+    var lesson = store.getLesson(lessonId);
     if (!lesson) return;
     var title = global.prompt('수업 이름을 바꿉니다.', lesson.title);
     if (title === null) return;
@@ -360,13 +549,15 @@
     render();
   }
 
-  function deleteLesson() {
-    var lesson = store.getCurrentLesson();
+  function deleteLesson(lessonId) {
+    var lesson = store.getLesson(lessonId);
     if (!lesson) return;
-    var message = '"' + lesson.title + '" 수업을 삭제합니다.\n클립 ' + lesson.clips.length + '개가 함께 지워집니다. 계속할까요?';
+    var message = '"' + lesson.title + '" 수업을 삭제합니다.\n' +
+      '클립 ' + lesson.clips.length + '개가 함께 지워집니다. 계속할까요?';
     if (!global.confirm(message)) return;
     store.removeLesson(lesson.id);
     currentClipId = null;
+    closeEditor();
     render();
     toast('수업을 삭제했습니다.');
   }
@@ -395,14 +586,15 @@
       var mode = 'merge';
       if (store.getLessons().length) {
         mode = global.confirm(
-          '가져온 수업을 기존 목록에 "추가"하려면 확인,\n기존 목록을 전부 "교체"하려면 취소를 누르세요.'
+          '가져온 목록을 기존 목록에 "추가"하려면 확인,\n기존 목록을 전부 "교체"하려면 취소를 누르세요.'
         ) ? 'merge' : 'replace';
       }
       try {
         var result = store.importJSON(String(reader.result), mode);
         currentClipId = null;
         render();
-        toast('수업 ' + result.lessons + '개, 클립 ' + result.clips + '개를 불러왔습니다.');
+        toast('묶음 ' + result.collections + '개, 수업 ' + result.lessons +
+          '개, 클립 ' + result.clips + '개를 불러왔습니다.');
       } catch (err) {
         console.error(err);
         toast('파일을 불러오지 못했습니다: ' + err.message);
@@ -433,6 +625,10 @@
   }
 
   function onKeyDown(event) {
+    if (event.key === 'Escape' && presenting) {
+      setPresenting(false);
+      return;
+    }
     if (isTyping(event.target)) return;
     if (event.ctrlKey || event.metaKey || event.altKey) return;
 
@@ -455,7 +651,7 @@
       else player.seekBy(5);
       return;
     }
-    if (key === 'r' || key === 'R' || key === 'ㄱ') {
+    if (key === 'r' || key === 'R') {
       event.preventDefault();
       player.restart(true);
       return;
@@ -464,6 +660,11 @@
       event.preventDefault();
       dom['opt-loop'].checked = !dom['opt-loop'].checked;
       dom['opt-loop'].dispatchEvent(new Event('change'));
+      return;
+    }
+    if (key === 'p' || key === 'P') {
+      event.preventDefault();
+      setPresenting(!presenting);
       return;
     }
     if (key === 'n' || key === 'N') {
@@ -482,7 +683,31 @@
     }
   }
 
-  /* ---------- 이벤트 연결 ---------- */
+  /* ---------- 목록 이벤트 ---------- */
+
+  function onLessonListClick(event) {
+    var item = event.target.closest('.lesson-item');
+    if (!item) return;
+    var lessonId = item.getAttribute('data-id');
+    var tool = event.target.closest('.tool-btn');
+
+    if (!tool) {
+      store.selectLesson(lessonId);
+      currentClipId = null;
+      closeEditor();
+      render();
+      return;
+    }
+
+    var act = tool.getAttribute('data-act');
+    if (act === 'rename') renameLesson(lessonId);
+    else if (act === 'move') openMoveDialog(lessonId);
+    else if (act === 'copy') {
+      store.duplicateLesson(lessonId);
+      render();
+      toast('수업을 복제했습니다.');
+    } else if (act === 'del') deleteLesson(lessonId);
+  }
 
   function onClipListClick(event) {
     var item = event.target.closest('.clip-item');
@@ -498,10 +723,11 @@
     }
 
     var act = tool.getAttribute('data-act');
-    if (act === 'up') store.moveClip(lesson.id, clipId, -1);
-    else if (act === 'down') store.moveClip(lesson.id, clipId, 1);
-    else if (act === 'edit') return openEditor('edit', store.getClip(lesson.id, clipId));
-    else if (act === 'copy') {
+    if (act === 'edit') {
+      openEditor('edit', store.getClip(lesson.id, clipId));
+      return;
+    }
+    if (act === 'copy') {
       store.duplicateClip(lesson.id, clipId);
       toast('클립을 복제했습니다.');
     } else if (act === 'del') {
@@ -526,26 +752,44 @@
     player.seekTo(start + (end - start) * ratio);
   }
 
+  /* ---------- 이벤트 연결 ---------- */
+
   function bind() {
-    dom['lesson-select'].addEventListener('change', function (event) {
-      store.selectLesson(event.target.value);
+    dom['collection-select'].addEventListener('change', function (event) {
+      store.selectCollection(event.target.value || null);
       currentClipId = null;
       closeEditor();
       render();
     });
+    dom['btn-collection-new'].addEventListener('click', newCollection);
+    dom['btn-collection-rename'].addEventListener('click', renameCollection);
+    dom['btn-collection-delete'].addEventListener('click', deleteCollection);
 
     dom['btn-lesson-new'].addEventListener('click', newLesson);
-    dom['btn-lesson-rename'].addEventListener('click', renameLesson);
-    dom['btn-lesson-delete'].addEventListener('click', deleteLesson);
     dom['btn-clip-add'].addEventListener('click', function () { openEditor('new', null); });
 
+    dom['lesson-list'].addEventListener('click', onLessonListClick);
     dom['clip-list'].addEventListener('click', onClipListClick);
-    dom['clip-list'].addEventListener('keydown', function (event) {
-      if (event.key !== 'Enter' && event.key !== ' ') return;
-      var item = event.target.closest('.clip-item');
-      if (!item || event.target.closest('.tool-btn')) return;
-      event.preventDefault();
-      playClip(item.getAttribute('data-id'), true);
+
+    [['lesson-list', '.lesson-item'], ['clip-list', '.clip-item']].forEach(function (pair) {
+      dom[pair[0]].addEventListener('keydown', function (event) {
+        if (event.key !== 'Enter' && event.key !== ' ') return;
+        var item = event.target.closest(pair[1]);
+        if (!item || event.target.closest('.tool-btn')) return;
+        event.preventDefault();
+        item.click();
+      });
+    });
+
+    enableDragSort(dom['lesson-list'], function (id, index) {
+      if (store.reorderLesson(id, index)) toast('수업 순서를 바꿨습니다.');
+      render();
+    });
+
+    enableDragSort(dom['clip-list'], function (id, index) {
+      var lesson = store.getCurrentLesson();
+      if (lesson) store.reorderClip(lesson.id, id, index);
+      render();
     });
 
     dom['btn-play'].addEventListener('click', function () { player.toggle(); });
@@ -566,11 +810,9 @@
       player.setLoop(event.target.checked);
       toast(event.target.checked ? '구간 반복을 켰습니다.' : '구간 반복을 껐습니다.');
     });
-
     dom['opt-autonext'].addEventListener('change', function (event) {
       store.setSetting('autoNext', event.target.checked);
     });
-
     dom['opt-rate'].addEventListener('change', function (event) {
       player.setRate(Number(event.target.value));
     });
@@ -582,8 +824,19 @@
     dom['btn-mark-end'].addEventListener('click', function () { markTime('end'); });
     dom['btn-preview'].addEventListener('click', previewEditor);
     dom['f-url'].addEventListener('change', onUrlInput);
-    dom['f-url'].addEventListener('paste', function () {
-      global.setTimeout(onUrlInput, 0);
+    dom['f-url'].addEventListener('paste', function () { global.setTimeout(onUrlInput, 0); });
+
+    dom['btn-present'].addEventListener('click', function () { setPresenting(!presenting); });
+    dom['btn-present-exit'].addEventListener('click', function () { setPresenting(false); });
+    document.addEventListener('fullscreenchange', function () {
+      // 브라우저 자체 단추로 전체 화면을 빠져나가면 발표 배치도 함께 푼다.
+      if (!document.fullscreenElement && presenting) setPresenting(false);
+    });
+
+    dom['btn-move-ok'].addEventListener('click', confirmMove);
+    dom['btn-move-cancel'].addEventListener('click', function () {
+      movingLessonId = null;
+      dom['move-dialog'].close();
     });
 
     dom['btn-export'].addEventListener('click', exportData);
@@ -600,9 +853,10 @@
     document.addEventListener('keydown', onKeyDown);
   }
 
-  /** 첫 실행이면 사용법을 보여 주는 예시 수업을 하나 만든다. */
+  /** 첫 실행이면 사용법을 보여 주는 예시 묶음을 하나 만든다. */
   function seedIfEmpty() {
-    if (store.getLessons().length) return;
+    if (store.getLessons().length || store.getCollections().length) return;
+    store.addCollection('예시 묶음');
     var lesson = store.addLesson('예시 수업');
     store.addClip(lesson.id, {
       videoId: 'aircAruvnKk',
