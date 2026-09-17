@@ -6,6 +6,12 @@
       "runtimeExecutable": "npm",
       "runtimeArgs": ["start"],
       "port": 4173
+    },
+    {
+      "name": "teach-utov-site",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "site"],
+      "port": 4174
     }
   ]
 }

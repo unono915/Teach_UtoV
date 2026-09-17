@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teach_UtoV · 수업에서 보여 줄 구간만, 바로</title>
+<meta name="description" content="수업에서 보여 줄 유튜브 구간을 미리 기록해 두고 클릭 한 번으로 재생합니다. 내려받지 않고 유튜브가 그 자리에서 재생하므로 저작권 걱정이 없습니다." />
+<meta name="theme-color" content="#F8F6F2" />
+<!-- 학교 안에서 나눠 쓰려고 만든 도구다. 검색으로 널리 퍼지지 않게 한다. -->
+<meta name="robots" content="noindex, nofollow" />
+
+<meta property="og:type" content="website" />
+<meta property="og:title" content="Teach_UtoV · 수업에서 보여 줄 구간만, 바로" />
+<meta property="og:description" content="유튜브 구간을 기록해 두고 수업 시간에 클릭 한 번으로 재생합니다. 복제 없이 재생만 하는 수업 도구." />
+
+<link rel="icon" href="app/icon.png" />
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+<a class="skip" href="#main">본문으로 건너뛰기</a>
+
+<header class="nav">
+  <div class="nav-in">
+    <a class="logo" href="#top" aria-label="Teach_UtoV 첫 화면">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect class="mark-box" x="1.2" y="1.2" width="21.6" height="21.6" rx="5.5" />
+        <path class="mark-play" d="M9 7.2 16.6 12 9 16.8Z" />
+      </svg>
+      <span>Teach_UtoV</span>
+    </a>
+    <nav class="nav-links" aria-label="본문 안내">
+      <a href="#what">하는 일</a>
+      <a href="#how">쓰는 법</a>
+      <a href="#safe">저작권</a>
+      <a href="#faq">자주 묻는 질문</a>
+    </nav>
+    <a class="btn btn-solid btn-sm" href="#get">받기</a>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- ─────────────────────────────────────────────── 첫 화면 -->
+  <section class="hero" id="top">
+    <p class="eyebrow">웹에서 바로 · 윈도우 프로그램 · 무료</p>
+    <h1>수업에서 보여 줄 3분,<br />찾느라 헤매지 않게.</h1>
+    <p class="lead">
+      영상 주소와 시작·끝 시각을 미리 적어 두면, 수업 시간에는 목록에서 한 번 누르는 것으로 끝납니다.
+      재생 위치를 더듬거나 광고를 넘기느라 흐름이 끊기지 않습니다.
+    </p>
+
+    <div class="hero-cta">
+      <a class="btn btn-solid btn-lg" href="app/">웹에서 바로 쓰기</a>
+      <a class="btn btn-quiet btn-lg" href="#get">윈도우용 내려받기</a>
+    </div>
+    <p class="hero-meta">설치도 가입도 필요 없습니다 · 기록한 목록은 내 컴퓨터에만 저장됩니다</p>
+
+    <!-- 실제 화면을 본뜬 그림. 사진이 아니라 코드로 그린 것이라 어디서나 또렷하다. -->
+    <figure class="shot" aria-label="Teach_UtoV 화면 구성">
+      <div class="mock" role="img" aria-label="왼쪽에 묶음과 수업, 클립 목록이 있고 오른쪽에 영상과 재생 막대가 있는 화면">
+        <div class="mock-bar">
+          <span class="mock-brand">▶ Teach_UtoV</span>
+          <span class="mock-chip mock-chip-solid">발표 모드</span>
+          <span class="mock-chip">내보내기</span>
+        </div>
+        <div class="mock-body">
+          <div class="mock-side">
+            <p class="mock-label">묶음</p>
+            <div class="mock-select">2학년 통합과학 (4)</div>
+            <p class="mock-label">수업</p>
+            <div class="mock-row">3차시 · 지구 시스템</div>
+            <div class="mock-row is-on">4차시 · 생명 시스템</div>
+            <p class="mock-label">클립</p>
+            <div class="mock-row is-clip"><b>1</b><span>세포 호흡 도입 <i>0:00 ~ 1:35</i></span></div>
+            <div class="mock-row is-clip is-on"><b>2</b><span>ATP 설명 <i>4:12 ~ 6:40</i></span></div>
+            <div class="mock-row is-clip"><b>3</b><span>정리 질문 <i>9:05 ~ 10:00</i></span></div>
+          </div>
+          <div class="mock-main">
+            <div class="mock-screen"><span>▶</span></div>
+            <p class="mock-title">ATP 설명</p>
+            <p class="mock-sub">2학년 통합과학 · 4차시 &nbsp;|&nbsp; 4:12 ~ 6:40 · 2분 28초</p>
+            <div class="mock-progress"><span></span></div>
+          </div>
+        </div>
+      </div>
+      <figcaption>왼쪽은 미리 정리해 둔 목록, 오른쪽은 그 구간만 재생되는 화면입니다.</figcaption>
+    </figure>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 핵심 -->
+  <section class="claim">
+    <div class="claim-in">
+      <h2>내려받지 않습니다. 유튜브가 그 자리에서 재생합니다.</h2>
+      <p>
+        이 프로그램이 저장하는 것은 <b>주소와 시각뿐</b>입니다. 영상 자체는 유튜브 공식 플레이어가
+        그때그때 불러와 재생합니다. 복제가 일어나지 않으니 저작권도, 이용약관도 건드리지 않습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 하는 일 -->
+  <section class="block" id="what">
+    <p class="kicker">하는 일</p>
+    <h2 class="block-title">준비는 미리, 수업은 가볍게</h2>
+
+    <ol class="features">
+      <li>
+        <span class="f-n">01</span>
+        <div class="f-body">
+          <h3>구간을 기록해 둡니다</h3>
+          <p>유튜브 주소를 붙여넣고 플레이어를 돌려 보며 <b>현재 위치</b> 버튼으로 시작과 끝을 찍습니다. 지정한 끝에서 저절로 멈춥니다.</p>
+        </div>
+      </li>
+      <li>
+        <span class="f-n">02</span>
+        <div class="f-body">
+          <h3>묶음으로 정리합니다</h3>
+          <p>과목이나 학기를 <b>묶음</b>으로 만들고 그 안에 차시별 수업을 담습니다. 목록은 끌어서 순서를 바꿉니다.</p>
+        </div>
+      </li>
+      <li>
+        <span class="f-n">03</span>
+        <div class="f-body">
+          <h3>발표 모드로 보여 줍니다</h3>
+          <p>누르면 목록과 편집 칸이 사라지고 영상만 크게 남습니다. 교실 프로젝터에 그대로 띄우기 좋습니다.</p>
+        </div>
+      </li>
+      <li>
+        <span class="f-n">04</span>
+        <div class="f-body">
+          <h3>옮기고 나눕니다</h3>
+          <p>정리한 목록을 파일 하나로 내보내고, 다른 컴퓨터에서 불러옵니다. 동료 선생님께 그대로 건네도 됩니다.</p>
+        </div>
+      </li>
+    </ol>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 쓰는 법 -->
+  <section class="block" id="how">
+    <p class="kicker">쓰는 법</p>
+    <h2 class="block-title">세 번이면 끝납니다</h2>
+
+    <div class="steps">
+      <div class="step">
+        <span class="s-n">1</span>
+        <h3>묶음과 수업 만들기</h3>
+        <p>과목을 묶음으로, 차시를 수업으로 만듭니다. 한 수업 안에 보여 줄 클립을 모아 둡니다.</p>
+      </div>
+      <div class="step">
+        <span class="s-n">2</span>
+        <h3>구간 찍기</h3>
+        <p>주소를 붙여넣고 재생하다가 <b>현재 위치</b>를 눌러 시작과 끝을 잡습니다. 메모도 함께 적어 둡니다.</p>
+      </div>
+      <div class="step">
+        <span class="s-n">3</span>
+        <h3>수업에서 누르기</h3>
+        <p>목록을 클릭하거나 숫자 키를 누르면 그 구간이 바로 재생됩니다. 발표 모드로 크게 띄웁니다.</p>
+      </div>
+    </div>
+
+    <div class="keys">
+      <h3>수업 중에 쓰는 키</h3>
+      <ul>
+        <li><kbd>Space</kbd> 재생 / 일시정지</li>
+        <li><kbd>R</kbd> 구간 처음으로</li>
+        <li><kbd>←</kbd> <kbd>→</kbd> 5초씩</li>
+        <li><kbd>Shift</kbd>+<kbd>←</kbd> <kbd>→</kbd> 이전 · 다음 클립</li>
+        <li><kbd>1</kbd> ~ <kbd>9</kbd> 번호 클립 바로 재생</li>
+        <li><kbd>P</kbd> 발표 모드</li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 저작권 -->
+  <section class="block" id="safe">
+    <p class="kicker">저작권</p>
+    <h2 class="block-title">걱정할 것이 없도록 만들었습니다</h2>
+
+    <div class="safe">
+      <div class="safe-card">
+        <h3>복제하지 않습니다</h3>
+        <p>영상 파일을 내려받거나 저장하지 않습니다. 저장되는 것은 주소와 시각, 제목, 메모뿐입니다.</p>
+      </div>
+      <div class="safe-card">
+        <h3>공식 플레이어를 씁니다</h3>
+        <p>유튜브가 공개한 IFrame Player API 로 재생합니다. 유튜브가 허용한 방식 그대로입니다.</p>
+      </div>
+      <div class="safe-card">
+        <h3>수익은 원저작자에게</h3>
+        <p>재생은 유튜브에서 일어나므로 조회수도 광고 수익도 영상을 만든 사람에게 그대로 갑니다.</p>
+      </div>
+    </div>
+
+    <div class="note">
+      <h3>전작 UtoV 와의 관계</h3>
+      <p>
+        같은 만든이가 앞서 내놓은 <b>UtoV</b> 는 유튜브 영상의 구간을 내려받는 도구였습니다.
+        내려받기는 복제에 해당해 쓰는 사람에게 저작권 판단을 떠넘기게 됩니다.
+      </p>
+      <p>
+        Teach_UtoV 는 같은 필요 — <b>수업에서 필요한 구간만 보여 주기</b> — 를
+        복제 없이 푸는 쪽으로 방식을 바꾼 것입니다. 수업 준비의 번거로움은 그대로 덜면서,
+        판단해야 할 것은 남기지 않으려 했습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 받기 -->
+  <section class="block get" id="get">
+    <p class="kicker">받기</p>
+    <h2 class="block-title">셋 중 하나를 고르세요</h2>
+
+    <div class="downloads">
+      <div class="dl dl-first">
+        <h3>웹에서 바로</h3>
+        <p>설치 없이 브라우저에서 바로 씁니다. 먼저 써 보고 마음에 들면 프로그램을 받으세요.</p>
+        <a class="btn btn-solid" href="app/">지금 열기</a>
+        <p class="dl-meta">크롬 · 엣지 · 웨일</p>
+      </div>
+      <div class="dl">
+        <h3>무설치</h3>
+        <p>받은 파일을 두 번 누르면 실행됩니다. 공유 드라이브나 USB 에 담아 나눠 쓰기 좋습니다.</p>
+        <a class="btn btn-quiet" href="https://github.com/unono915/Teach_UtoV/releases/latest/download/Teach_UtoV-portable.exe">
+          Teach_UtoV-portable.exe
+        </a>
+        <p class="dl-meta">Windows 10 / 11</p>
+      </div>
+      <div class="dl">
+        <h3>설치본</h3>
+        <p>시작 메뉴와 바탕화면에 바로가기를 만듭니다. 본인 PC 에서 계속 쓸 때 편합니다.</p>
+        <a class="btn btn-quiet" href="https://github.com/unono915/Teach_UtoV/releases/latest/download/Teach_UtoV-setup.exe">
+          Teach_UtoV-setup.exe
+        </a>
+        <p class="dl-meta">Windows 10 / 11</p>
+      </div>
+    </div>
+
+    <div class="note">
+      <h3>처음 실행할 때</h3>
+      <p>
+        윈도우가 <b>"Windows의 PC 보호"</b>라고 알릴 수 있습니다. 서명 인증서를 사지 않은 프로그램이라 나오는 안내입니다.
+        <b>추가 정보</b>를 누른 뒤 <b>실행</b>을 고르면 됩니다.
+      </p>
+      <p>
+        영상은 유튜브에서 바로 불러오므로 <b>수업 중에도 인터넷 연결이 필요합니다.</b>
+        목록 자체는 인터넷 없이도 정리할 수 있습니다.
+      </p>
+    </div>
+  </section>
+
+  <!-- ─────────────────────────────────────────────── 질문 -->
+  <section class="block" id="faq">
+    <p class="kicker">자주 묻는 질문</p>
+    <h2 class="block-title">먼저 나오는 질문들</h2>
+
+    <div class="faq">
+      <details>
+        <summary>웹으로 써도 되는데 프로그램은 왜 필요한가요?</summary>
+        <p>교실 컴퓨터에서 브라우저를 열고 주소를 찾아 들어갈 필요 없이 바로 켤 수 있습니다. 다른 탭이나 즐겨찾기가 화면에 비치지 않고, 학교 컴퓨터를 옮겨 다녀도 같은 창이 뜹니다. 웹으로 충분하다면 웹만 쓰셔도 됩니다.</p>
+      </details>
+      <details>
+        <summary>정리해 둔 목록은 어디에 저장되나요?</summary>
+        <p>쓰는 컴퓨터 안에만 저장됩니다. 서버로 보내지 않고 계정도 만들지 않습니다. 브라우저 데이터를 지우면 함께 사라지므로, <b>내보내기</b>로 파일 백업을 받아 두시길 권합니다.</p>
+      </details>
+      <details>
+        <summary>다른 컴퓨터에서도 같은 목록을 쓰고 싶습니다.</summary>
+        <p><b>내보내기</b>로 받은 파일을 그 컴퓨터에서 <b>가져오기</b> 하면 됩니다. 기존 목록에 더할지, 통째로 바꿀지 고를 수 있습니다.</p>
+      </details>
+      <details>
+        <summary>인터넷이 끊기면 어떻게 되나요?</summary>
+        <p>영상은 유튜브에서 불러오므로 재생되지 않습니다. 목록을 만들고 고치는 일은 인터넷 없이도 됩니다.</p>
+      </details>
+      <details>
+        <summary>"게시자가 외부 재생을 막아 두었습니다"라고 나옵니다.</summary>
+        <p>영상을 올린 사람이 다른 사이트에서의 재생을 막아 둔 경우입니다. 이런 영상은 유튜브에서 직접 열어야 합니다. 화면의 <b>유튜브에서 열기</b>를 누르면 그 시각으로 바로 이동합니다.</p>
+      </details>
+      <details>
+        <summary>맥이나 태블릿에서도 되나요?</summary>
+        <p>웹 버전은 브라우저만 있으면 어디서나 됩니다. 내려받는 프로그램은 지금 윈도우용만 있습니다.</p>
+      </details>
+      <details>
+        <summary>광고는 어떻게 되나요?</summary>
+        <p>유튜브 플레이어를 그대로 쓰므로 광고 정책도 유튜브를 따릅니다. 광고를 없애거나 건너뛰지 않습니다.</p>
+      </details>
+    </div>
+  </section>
+
+</main>
+
+<footer class="foot">
+  <div class="foot-in">
+    <div class="foot-brand">
+      <svg class="mark" viewBox="0 0 24 24" aria-hidden="true">
+        <rect class="mark-box" x="1.2" y="1.2" width="21.6" height="21.6" rx="5.5" />
+        <path class="mark-play" d="M9 7.2 16.6 12 9 16.8Z" />
+      </svg>
+      <span>Teach_UtoV</span>
+    </div>
+    <p class="foot-note">수업 자료를 준비하는 선생님을 위해 만들었습니다.</p>
+    <p class="foot-legal">
+      MIT 라이선스 ·
+      <a href="https://github.com/unono915/Teach_UtoV" target="_blank" rel="noopener">소스 보기</a> ·
+      재생에는 <a href="https://developers.google.com/youtube/iframe_api_reference" target="_blank" rel="noopener">YouTube IFrame Player API</a>를 씁니다.
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>
